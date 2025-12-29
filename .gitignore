@@ -27,3 +27,12 @@ debug/
 # Qt generated files
 Makefile.Debug
 Makefile.Release
+
+# Test files
+test_image.png
+*.test.png
+*.test.jpg
+*.test.bmp
+
+# CodeQL
+_codeql_detected_source_root
