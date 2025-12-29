@@ -18,8 +18,9 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+
 private:
-    QLabel *statusLabel;
-    QLabel *MousePosLabel;
+    QLabel  *statusLabel;
+    QLabel  *MousePosLabel;
 };
 #endif // MOUSEEVENT_H
