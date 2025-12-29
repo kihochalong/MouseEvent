@@ -7,10 +7,16 @@
 #include <QPainter>
 #include <QPaintEvent>
 #include <QtMath>
+#include <QtGlobal>
+#include <QInputDialog>
 
 // Constants for region selection
 namespace {
     constexpr int MIN_SELECTION_SIZE = 5; // Minimum width/height for valid selection
+    constexpr int CLICK_SELECTION_SIZE = 120; // Default square size for click-to-zoom
+    constexpr double MIN_ZOOM_SCALE = 1.0;
+    constexpr double MAX_ZOOM_SCALE = 10.0;
+    constexpr double DEFAULT_ZOOM_SCALE = 2.0;
 }
 
 ImageProcessor::ImageProcessor(QWidget *parent)
@@ -199,26 +205,51 @@ void ImageProcessor::mouseReleaseEvent(QMouseEvent *event){
             selectionEnd = imgPos;
         }
         
+        QRect region;
+
         // Calculate the selected region
-        int x = qMin(selectionStart.x(), selectionEnd.x());
-        int y = qMin(selectionStart.y(), selectionEnd.y());
-        int width = qAbs(selectionEnd.x() - selectionStart.x());
-        int height = qAbs(selectionEnd.y() - selectionStart.y());
-        
-        // Only open zoom window if a valid region is selected
+        const int x = qMin(selectionStart.x(), selectionEnd.x());
+        const int y = qMin(selectionStart.y(), selectionEnd.y());
+        const int width = qAbs(selectionEnd.x() - selectionStart.x());
+        const int height = qAbs(selectionEnd.y() - selectionStart.y());
+
         if (width > MIN_SELECTION_SIZE && height > MIN_SELECTION_SIZE) {
-            selectedRegion = QRect(x, y, width, height);
-            
-            // Ensure the region is within image bounds
-            selectedRegion = selectedRegion.intersected(img.rect());
-            
+            region = QRect(x, y, width, height);
+        } else if (selectionStart == selectionEnd) {
+            // Treat as click-to-zoom: create a square around the clicked point
+            const int halfSize = CLICK_SELECTION_SIZE / 2;
+            const int regionWidth = qMin(CLICK_SELECTION_SIZE, img.width());
+            const int regionHeight = qMin(CLICK_SELECTION_SIZE, img.height());
+
+            const int startX = qBound(0, selectionStart.x() - halfSize, img.width() - regionWidth);
+            const int startY = qBound(0, selectionStart.y() - halfSize, img.height() - regionHeight);
+            region = QRect(startX, startY, regionWidth, regionHeight);
+        }
+
+        // Only open zoom window if a valid region is selected
+        if (region.isValid() && !region.isEmpty()) {
+            selectedRegion = region.intersected(img.rect());
+
             if (selectedRegion.isValid() && !selectedRegion.isEmpty()) {
-                ZoomWindow *zoomWin = new ZoomWindow(img, selectedRegion, 2.0, this);
-                zoomWin->setAttribute(Qt::WA_DeleteOnClose);
-                zoomWin->show();
+                bool ok = false;
+                const double scale = QInputDialog::getDouble(
+                    this,
+                    tr("設定縮放倍率"),
+                    tr("輸入縮放倍率 (1.0 - 10.0):"),
+                    DEFAULT_ZOOM_SCALE,
+                    MIN_ZOOM_SCALE,
+                    MAX_ZOOM_SCALE,
+                    1,
+                    &ok);
+
+                if (ok) {
+                    ZoomWindow *zoomWin = new ZoomWindow(img, selectedRegion, scale, this);
+                    zoomWin->setAttribute(Qt::WA_DeleteOnClose);
+                    zoomWin->show();
+                }
             }
         }
-        
+
         // Clear the selection overlay
         imgWin->setPixmap(QPixmap::fromImage(img));
     }

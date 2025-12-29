@@ -5,7 +5,7 @@
 #include <QImage>
 #include <QLabel>
 #include <QPushButton>
-#include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QSlider>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -14,6 +14,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QColorDialog>
+#include <QtMath>
 
 class ZoomWindow : public QWidget
 {
@@ -25,7 +26,8 @@ public:
 
 private slots:
     void saveImage();
-    void updateZoomScale(int value);
+    void updateZoomScaleFromSlider(int value);
+    void updateZoomScaleFromSpin(double value);
     void toggleBrushTool();
     void selectBrushColor();
     void updateBrushSize(int size);
@@ -38,6 +40,7 @@ protected:
 private:
     void setupUI();
     void updateZoomedImage();
+    void setZoomScale(double scale);
     QPoint mapToImageCoordinates(const QPoint &widgetPos);
 
     QImage originalImage;
@@ -47,7 +50,7 @@ private:
     double zoomScale;
 
     QLabel *imageLabel;
-    QSpinBox *scaleSpinBox;
+    QDoubleSpinBox *scaleSpinBox;
     QSlider *scaleSlider;
     QPushButton *saveButton;
     QPushButton *brushButton;
