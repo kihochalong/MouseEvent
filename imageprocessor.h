@@ -9,8 +9,11 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include <QStatusBar>
+#include <QPainter>
+#include <QRect>
 #include "imagetransform.h"
 #include "mouseevent.h"
+#include "zoomwindow.h"
 
 class ImageProcessor : public QMainWindow
 {
@@ -49,11 +52,23 @@ private:
 
     QLabel  *statusLabel;
     QLabel  *MousePosLabel;
+    
+    // Region selection variables
+    bool isSelecting;
+    QPoint selectionStart;
+    QPoint selectionEnd;
+    QRect selectedRegion;
+    QPixmap overlayPixmap;
 
 protected:
     void mouseDoubleClickEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);
     void mouseReleaseEvent(QMouseEvent *event);
+    void paintEvent(QPaintEvent *event);
+    
+private:
+    void drawSelectionRect();
+    QPoint mapToImageCoordinates(const QPoint &pos);
 };
 #endif // IMAGEPROCESSOR_H
