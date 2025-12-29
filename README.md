@@ -57,13 +57,13 @@ ImageProcessor.exe
 
 ### Zoom and Region Selection
 1. **Select Region**: 
-   - Click and drag on the image to select a region
-   - A blue dashed rectangle shows the selected area
+   - Click and drag on the image to select a region (blue dashed rectangle shows the area), or click once to zoom around a point
    - Release to open the zoom window
+   - Enter your preferred zoom scale (1.0x–10.0x) when prompted
 
 2. **Adjust Zoom**:
-   - Use the horizontal slider or spinbox
-   - Range: 1.0x to 10.0x
+   - Use the horizontal slider or spinbox inside the zoom window
+   - Range: 1.0x to 10.0x with 0.1 increments
    - Image updates in real-time
 
 3. **Drawing on Zoomed Image**:

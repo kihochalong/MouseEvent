@@ -43,7 +43,9 @@ This implementation adds the ability to zoom in on an image in the main window b
 
 #### ZoomWindow Class
 - `ZoomWindow(const QImage &sourceImage, const QRect &region, double initialScale, QWidget *parent)`: Constructor
-- `updateZoomScale(int value)`: Updates the zoom level
+- `updateZoomScaleFromSlider(int value)`: Updates the zoom level from slider
+- `updateZoomScaleFromSpin(double value)`: Updates the zoom level from spinbox
+- `setZoomScale(double scale)`: Synchronizes zoom controls and updates the zoomed image
 - `toggleBrushTool()`: Enables/disables the brush tool
 - `selectBrushColor()`: Opens color picker dialog
 - `updateBrushSize(int size)`: Adjusts brush size
@@ -62,13 +64,13 @@ This implementation adds the ability to zoom in on an image in the main window b
 
 ### Selecting and Zooming a Region
 1. Open an image in the main window
-2. Click and drag on the image to select a region
-3. Release the mouse button to open the zoom window
+2. Click and drag on the image to select a region (blue dashed outline), or click once to zoom around a point
+3. Release the mouse button to open the zoom window and enter a custom zoom scale (1.0x - 10.0x)
 4. The zoomed region will appear in a new window
 
 ### Adjusting Zoom Level
 1. Use the horizontal slider to adjust zoom
-2. Or use the spinbox for precise control
+2. Or use the spinbox for precise control (0.1 increments)
 3. The image updates in real-time
 
 ### Drawing on the Image

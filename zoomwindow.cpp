@@ -39,7 +39,7 @@ void ZoomWindow::setupUI()
     
     QLabel *scaleLabel = new QLabel(tr("縮放比例:"), this);
     controlLayout->addWidget(scaleLabel);
-    
+
     scaleSlider = new QSlider(Qt::Horizontal, this);
     scaleSlider->setMinimum(10);  // 1.0x
     scaleSlider->setMaximum(100); // 10.0x
@@ -47,16 +47,18 @@ void ZoomWindow::setupUI()
     scaleSlider->setTickPosition(QSlider::TicksBelow);
     scaleSlider->setTickInterval(10);
     controlLayout->addWidget(scaleSlider);
-    
-    scaleSpinBox = new QSpinBox(this);
-    scaleSpinBox->setMinimum(10);
-    scaleSpinBox->setMaximum(100);
-    scaleSpinBox->setValue((int)(zoomScale * 10));
-    scaleSpinBox->setSuffix("x (÷10)");
+
+    scaleSpinBox = new QDoubleSpinBox(this);
+    scaleSpinBox->setMinimum(1.0);
+    scaleSpinBox->setMaximum(10.0);
+    scaleSpinBox->setSingleStep(0.1);
+    scaleSpinBox->setDecimals(1);
+    scaleSpinBox->setValue(zoomScale);
+    scaleSpinBox->setSuffix("x");
     controlLayout->addWidget(scaleSpinBox);
-    
-    connect(scaleSlider, SIGNAL(valueChanged(int)), this, SLOT(updateZoomScale(int)));
-    connect(scaleSpinBox, SIGNAL(valueChanged(int)), this, SLOT(updateZoomScale(int)));
+
+    connect(scaleSlider, SIGNAL(valueChanged(int)), this, SLOT(updateZoomScaleFromSlider(int)));
+    connect(scaleSpinBox, SIGNAL(valueChanged(double)), this, SLOT(updateZoomScaleFromSpin(double)));
     
     mainLayout->addLayout(controlLayout);
     
@@ -110,7 +112,7 @@ void ZoomWindow::setupUI()
 void ZoomWindow::updateZoomedImage()
 {
     if (croppedImage.isNull()) return;
-    
+
     int newWidth = (int)(croppedImage.width() * zoomScale);
     int newHeight = (int)(croppedImage.height() * zoomScale);
     
@@ -139,20 +141,34 @@ void ZoomWindow::saveImage()
     }
 }
 
-void ZoomWindow::updateZoomScale(int value)
+void ZoomWindow::setZoomScale(double scale)
 {
-    // Update both controls to stay in sync
+    double clampedScale = qBound(1.0, scale, 10.0);
+
+    // Keep UI controls synchronized without recursive signals
     scaleSlider->blockSignals(true);
     scaleSpinBox->blockSignals(true);
-    
-    scaleSlider->setValue(value);
-    scaleSpinBox->setValue(value);
-    
+
+    scaleSlider->setValue(static_cast<int>(clampedScale * 10));
+    scaleSpinBox->setValue(clampedScale);
+
     scaleSlider->blockSignals(false);
     scaleSpinBox->blockSignals(false);
-    
-    zoomScale = value / 10.0;
-    updateZoomedImage();
+
+    if (!qFuzzyCompare(zoomScale, clampedScale)) {
+        zoomScale = clampedScale;
+        updateZoomedImage();
+    }
+}
+
+void ZoomWindow::updateZoomScaleFromSlider(int value)
+{
+    setZoomScale(value / 10.0);
+}
+
+void ZoomWindow::updateZoomScaleFromSpin(double value)
+{
+    setZoomScale(value);
 }
 
 void ZoomWindow::toggleBrushTool()
