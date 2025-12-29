@@ -8,6 +8,11 @@
 #include <QPaintEvent>
 #include <QtMath>
 
+// Constants for region selection
+namespace {
+    constexpr int MIN_SELECTION_SIZE = 5; // Minimum width/height for valid selection
+}
+
 ImageProcessor::ImageProcessor(QWidget *parent)
     : QMainWindow(parent), isSelecting(false)
 {
@@ -201,7 +206,7 @@ void ImageProcessor::mouseReleaseEvent(QMouseEvent *event){
         int height = qAbs(selectionEnd.y() - selectionStart.y());
         
         // Only open zoom window if a valid region is selected
-        if (width > 5 && height > 5) {
+        if (width > MIN_SELECTION_SIZE && height > MIN_SELECTION_SIZE) {
             selectedRegion = QRect(x, y, width, height);
             
             // Ensure the region is within image bounds

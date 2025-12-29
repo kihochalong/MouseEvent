@@ -228,9 +228,10 @@ void ZoomWindow::mouseMoveEvent(QMouseEvent *event)
             
             // Update the cropped image as well (scale back the drawing)
             QPainter croppedPainter(&croppedImage);
-            QPoint scaledLast(lastDrawPoint.x() / zoomScale, lastDrawPoint.y() / zoomScale);
-            QPoint scaledCurrent(imagePos.x() / zoomScale, imagePos.y() / zoomScale);
-            croppedPainter.setPen(QPen(brushColor, brushSize / zoomScale, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+            QPoint scaledLast(qRound(lastDrawPoint.x() / zoomScale), qRound(lastDrawPoint.y() / zoomScale));
+            QPoint scaledCurrent(qRound(imagePos.x() / zoomScale), qRound(imagePos.y() / zoomScale));
+            int scaledBrushSize = qMax(1, qRound(brushSize / zoomScale));
+            croppedPainter.setPen(QPen(brushColor, scaledBrushSize, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
             croppedPainter.drawLine(scaledLast, scaledCurrent);
             
             lastDrawPoint = imagePos;
