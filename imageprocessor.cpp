@@ -4,9 +4,17 @@
 #include <QMenuBar>
 #include <QFileDialog>
 #include <QDebug>
+#include <QPainter>
+#include <QPaintEvent>
+#include <QtMath>
+
+// Constants for region selection
+namespace {
+    constexpr int MIN_SELECTION_SIZE = 5; // Minimum width/height for valid selection
+}
 
 ImageProcessor::ImageProcessor(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent), isSelecting(false)
 {
     setWindowTitle(tr("影像處理"));
     central = new QWidget();
@@ -148,11 +156,28 @@ void ImageProcessor::mouseMoveEvent(QMouseEvent *event){
     QString str = "(" + QString::number(event->x()) +", " + QString::number(event->y()) + ")" + " = "+QString::number(gray);
 
     MousePosLabel->setText(str);
+    
+    // Update selection region while dragging
+    if (isSelecting && !img.isNull()) {
+        QPoint imgPos = mapToImageCoordinates(event->pos());
+        if (imgPos.x() >= 0 && imgPos.y() >= 0) {
+            selectionEnd = imgPos;
+            drawSelectionRect();
+        }
+    }
 }
 void ImageProcessor::mousePressEvent(QMouseEvent *event){
     QString str = "(" + QString::number(event->x()) +", " + QString::number(event->y()) + ")";
     if(event->button()==Qt::LeftButton){
         statusBar()->showMessage(tr("左鍵:")+str,1000);
+        
+        // Start region selection
+        QPoint imgPos = mapToImageCoordinates(event->pos());
+        if (imgPos.x() >= 0 && imgPos.y() >= 0 && !img.isNull()) {
+            isSelecting = true;
+            selectionStart = imgPos;
+            selectionEnd = imgPos;
+        }
     }
     else if(event->button()==Qt::RightButton){
         statusBar()->showMessage(tr("右鍵:")+str,1000);
@@ -164,4 +189,87 @@ void ImageProcessor::mousePressEvent(QMouseEvent *event){
 void ImageProcessor::mouseReleaseEvent(QMouseEvent *event){
     QString str = "(" + QString::number(event->x()) +", " + QString::number(event->y()) + ")";
     statusBar()->showMessage(tr("釋放:")+str,1000);
+    
+    // Complete region selection and open zoom window
+    if (isSelecting && event->button() == Qt::LeftButton && !img.isNull()) {
+        isSelecting = false;
+        
+        QPoint imgPos = mapToImageCoordinates(event->pos());
+        if (imgPos.x() >= 0 && imgPos.y() >= 0) {
+            selectionEnd = imgPos;
+        }
+        
+        // Calculate the selected region
+        int x = qMin(selectionStart.x(), selectionEnd.x());
+        int y = qMin(selectionStart.y(), selectionEnd.y());
+        int width = qAbs(selectionEnd.x() - selectionStart.x());
+        int height = qAbs(selectionEnd.y() - selectionStart.y());
+        
+        // Only open zoom window if a valid region is selected
+        if (width > MIN_SELECTION_SIZE && height > MIN_SELECTION_SIZE) {
+            selectedRegion = QRect(x, y, width, height);
+            
+            // Ensure the region is within image bounds
+            selectedRegion = selectedRegion.intersected(img.rect());
+            
+            if (selectedRegion.isValid() && !selectedRegion.isEmpty()) {
+                ZoomWindow *zoomWin = new ZoomWindow(img, selectedRegion, 2.0, this);
+                zoomWin->setAttribute(Qt::WA_DeleteOnClose);
+                zoomWin->show();
+            }
+        }
+        
+        // Clear the selection overlay
+        imgWin->setPixmap(QPixmap::fromImage(img));
+    }
+}
+
+void ImageProcessor::paintEvent(QPaintEvent *event) {
+    QMainWindow::paintEvent(event);
+}
+
+void ImageProcessor::drawSelectionRect() {
+    if (img.isNull()) return;
+    
+    // Create a copy of the image with the selection rectangle
+    QPixmap pixmap = QPixmap::fromImage(img);
+    QPainter painter(&pixmap);
+    
+    // Draw the selection rectangle
+    painter.setPen(QPen(Qt::blue, 2, Qt::DashLine));
+    
+    int x = qMin(selectionStart.x(), selectionEnd.x());
+    int y = qMin(selectionStart.y(), selectionEnd.y());
+    int width = qAbs(selectionEnd.x() - selectionStart.x());
+    int height = qAbs(selectionEnd.y() - selectionStart.y());
+    
+    painter.drawRect(x, y, width, height);
+    
+    imgWin->setPixmap(pixmap);
+}
+
+QPoint ImageProcessor::mapToImageCoordinates(const QPoint &pos) {
+    // Convert window coordinates to image coordinates
+    QPoint imgWinPos = imgWin->mapFrom(this, pos);
+    
+    if (img.isNull()) return QPoint(-1, -1);
+    
+    // Get the current pixmap size
+    QPixmap currentPixmap = imgWin->pixmap(Qt::ReturnByValue);
+    if (currentPixmap.isNull()) return QPoint(-1, -1);
+    
+    // Calculate scale factors
+    double scaleX = (double)img.width() / currentPixmap.width();
+    double scaleY = (double)img.height() / currentPixmap.height();
+    
+    // Map to image coordinates
+    int imageX = (int)(imgWinPos.x() * scaleX);
+    int imageY = (int)(imgWinPos.y() * scaleY);
+    
+    // Check bounds
+    if (imageX >= 0 && imageX < img.width() && imageY >= 0 && imageY < img.height()) {
+        return QPoint(imageX, imageY);
+    }
+    
+    return QPoint(-1, -1);
 }

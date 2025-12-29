@@ -1,0 +1,38 @@
+# Qt-specific
+*.o
+*.so
+*.a
+moc_*.cpp
+moc_*.h
+moc_predefs.h
+ui_*.h
+qrc_*.cpp
+*.moc
+Makefile
+.qmake.stash
+
+# Executables
+ImageProcessor
+ImageProcessor.exe
+
+# IDE files
+*.pro.user
+*.pro.user.*
+
+# Build directories
+build/
+release/
+debug/
+
+# Qt generated files
+Makefile.Debug
+Makefile.Release
+
+# Test files
+test_image.png
+*.test.png
+*.test.jpg
+*.test.bmp
+
+# CodeQL
+_codeql_detected_source_root
